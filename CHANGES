@@ -1,5 +1,9 @@
 CHANGES - changes for libtpms
 
+version 0.7.4
+  - Addressed potential constant-time related issues in TPM 1.2 and TPM 2 code
+  - Fixed some compilation issues
+
 version 0.7.3
   - Fixed the set of PCRs belonging to the TCB group. This affects the
     pcrUpdateCounter in TPM2_Pcrread() responses, thus needs latest `swtpm`
