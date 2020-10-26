@@ -325,6 +325,7 @@ BnSignEcdaa(
 			    CryptDigestUpdate2B(&state, &digest->b);
 			    CryptHashEnd2B(&state, &T.b);
 			    BnFrom2B(bnT, &T.b);
+			    // libtpms: Note: T is NOT a concern for constant-timeness
 			    // Watch out for the name collisions in this call!!
 			    retVal = BnSchnorrSign(bnS, bnR, bnT, bnD,
 						   AccessCurveData(E)->order);
@@ -422,6 +423,7 @@ BnSignEcSchnorr(
 	    SchnorrReduce(e, order);
 	    // Convert hash to number
 	    BnFrom2B(bnR, e);
+	    // libtpms: Note: e is NOT a concern for constant-timeness
 	    // Do the Schnorr computation
 	    retVal = BnSchnorrSign(bnS, bnK, bnR, bnD, CurveGetOrder(C));
 	} while(retVal == TPM_RC_NO_RESULT);
@@ -485,6 +487,7 @@ BnSignEcSm2(
     {
 	// Get a random number 0 < k < n
 	BnGenerateRandomInRange(bnK, order, rand);
+	// FIXME: libtpms: should we repeat this if highest byte is 0?
 #ifdef _SM2_SIGN_DEBUG
 	BnFromHex(bnK, "6CB28D99385C175C94F94E934817663F"
 		  "C176D925DD72B727260DBAAE1FB2F96F");
