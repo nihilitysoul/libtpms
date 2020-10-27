@@ -585,6 +585,8 @@ BnEccGetPrivate(
 		bigNum                   dOut,      // OUT: the qualified random value
 		const ECC_CURVE_DATA    *C,         // IN: curve for which the private key
 		const EC_GROUP          *G,         // IN: the EC_GROUP to use; must be != NULL for rand == NULL
+		BOOL                     noLeadingZeros, // IN: require that all bytes in the private key be set
+		                                         //     result may not have leading zero bytes
 		//     needs to be appropriate
 		RAND_STATE              *rand       // IN: state for DRBG
 		)
@@ -593,11 +595,16 @@ BnEccGetPrivate(
     BOOL                     OK;
     UINT32                   orderBits = BnSizeInBits(order);
     UINT32                   orderBytes = BITS_TO_BYTES(orderBits);
+    UINT32                   requestedBits = 0;
     BN_VAR(bnExtraBits, MAX_ECC_KEY_BITS + 64);
     BN_VAR(nMinus1, MAX_ECC_KEY_BITS);
 
-    if (rand == NULL)
-        return OpenSSLEccGetPrivate(dOut, G);
+    if (rand == NULL) {
+        if (noLeadingZeros)
+            requestedBits = orderBits;
+
+        return OpenSSLEccGetPrivate(dOut, G, requestedBits);
+    }
 
     //
     OK = BnGetRandomBits(bnExtraBits, (orderBytes * 8) + 64, rand);
@@ -621,7 +628,9 @@ BnEccGenerateKeyPair(
     BOOL                 OK = FALSE;
     // Get a private scalar
 #if USE_OPENSSL_FUNCTIONS_EC           // libtpms added beging
-    OK = BnEccGetPrivate(bnD, AccessCurveData(E), E->G, rand);
+    // Note: The bnD must not have leading zeros otherwise we will have a timing side-channel
+    //       in the BnEccModMult operation below
+    OK = BnEccGetPrivate(bnD, AccessCurveData(E), E->G, true, rand);
 #else                                  // libtpms added end
     OK = BnEccGetPrivate(bnD, AccessCurveData(E), rand);
 #endif                                 // libtpms added
